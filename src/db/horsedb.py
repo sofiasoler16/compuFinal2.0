@@ -1,7 +1,7 @@
 import sqlite3
 import threading
 
-# 1. Creamos el candado (Lock) global para este módulo
+# 1. Crea el candado (Lock) global para este módulo
 db_lock = threading.Lock()
 
 def inicializar_db():

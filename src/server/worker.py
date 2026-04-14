@@ -24,7 +24,7 @@ def atender_sensor(conexion, direccion, cola_ipc):
             alertas = analizar_riesgo(datos['movimiento'], datos['temperatura'])
             alertas_str = ", ".join(alertas) if alertas else "Ninguna"
             
-            # 2. Guardar en SQLite (usando tu función con Lock seguro)
+            # 2. Guardar en SQLite (usando función con Lock seguro)
             guardar_lectura(
                 datos['horse_id'], 
                 datos['bpm'], 
@@ -33,7 +33,7 @@ def atender_sensor(conexion, direccion, cola_ipc):
                 alertas_str
             )
             
-            # 3. Notificar vía IPC si hay peligro
+            # 3. Notificar vía IPC si hay alerta
             if alertas:
                 alerta_msg = {
                     'mensaje': f"¡Signos de dolor abdominal en {datos['horse_id']}!",

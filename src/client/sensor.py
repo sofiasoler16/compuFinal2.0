@@ -3,68 +3,81 @@ import json
 import time
 import random
 import argparse
-from datetime import datetime
 
-def simular_datos(id_caballo, modo):
-    """Genera datos biométricos simulados según el estado del caballo."""
-    if modo == "colico":
-        # Simulamos parámetros anormales (dolor/estrés)
-        bpm = random.randint(60, 85)  # Taquicardia
-        temp = round(random.uniform(38.5, 39.5), 1)  # Fiebre leve a moderada
-        actividad = random.choice(["inmovil", "revolcandose"])
-    else:
-        # Simulamos un caballo sano en su box
-        bpm = random.randint(30, 45)  # Reposo normal
-        temp = round(random.uniform(37.5, 38.2), 1)  # Temperatura normal
-        actividad = random.choice(["comiendo", "descansando", "caminando_lento"])
+HOST = '::1'
+PORT = 8080
+
+MOVIMIENTOS = [
+    "revolcandose", "parado", "comiendo", 
+    "rascar piso", "mirar la panza", "guaneando"
+]
+
+TEMPERATURAS = [36.0, 37.5, 38.0, 39.0, 40.0, 41.0, 42.0]
+
+def generar_datos(horse_id, perfil):
+    """Genera datos basados en el perfil de salud asignado."""
+    
+    # Definimos los pesos de probabilidad según el perfil
+    if perfil == "saludable":
+        # Casi nula probabilidad de síntomas de cólico, temperaturas normales
+        pesos_mov = [0, 45, 45, 0, 0, 10] 
+        pesos_temp = [5, 40, 50, 5, 0, 0, 0] 
+    elif perfil == "colico":
+        # Alta probabilidad de comportamientos de dolor y fiebre
+        pesos_mov = [20, 10, 10, 25, 25, 10]
+        pesos_temp = [0, 5, 10, 15, 30, 25, 15]
+
+    movimiento = random.choices(MOVIMIENTOS, weights=pesos_mov, k=1)[0]
+    temperatura = random.choices(TEMPERATURAS, weights=pesos_temp, k=1)[0]
+    
+    # Lógica de BPM
+    bpm = random.randint(28, 44)
+    if temperatura >= 40.0 or movimiento in ["revolcandose", "mirar la panza", "rascar piso"]:
+        bpm = random.randint(55, 80)
 
     return {
-        "action": "telemetry",
-        "id_caballo": id_caballo,
-        "timestamp": datetime.now().isoformat(),
+        "horse_id": horse_id,
         "bpm": bpm,
-        "temperatura": temp,
-        "actividad": actividad
+        "temperatura": temperatura,
+        "movimiento": movimiento
     }
 
-def iniciar_sensor(host, port, id_caballo, modo, intervalo):
-    # Usamos IPv4 por defecto, creando el socket TCP
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            print(f"[{id_caballo}] Intentando conectar al Gateway en {host}:{port}...")
-            s.connect((host, port))
-            print(f"[{id_caballo}] ¡Conectado exitosamente!")
+def iniciar_sensor(horse_id, perfil):
+    print(f"--- Iniciando Sensor Simulador ---")
+    print(f"Box: {horse_id} | Perfil Clínico: {perfil.upper()}")
+    
+    cliente = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    
+    try:
+        cliente.connect((HOST, PORT, 0, 0))
+        print(f"[CONECTADO] Transmitiendo datos a {HOST}:{PORT}...\n")
+        
+        while True:
+            datos = generar_datos(horse_id, perfil)
+            mensaje_json = json.dumps(datos)
+            
+            cliente.send(mensaje_json.encode('utf-8'))
+            
+            # Un pequeño indicador visual en la terminal del sensor
+            alerta_visual = "⚠️" if datos['temperatura'] >= 40.0 or datos['movimiento'] in ["revolcandose", "mirar la panza", "rascar piso"] else "✅"
+            
+            print(f"[{alerta_visual} ENVIADO] Temp: {datos['temperatura']}°C | Mov: {datos['movimiento']:<15} | BPM: {datos['bpm']}")
+            
+            time.sleep(1)
+            
+    except ConnectionRefusedError:
+        print("\n[ERROR] No se pudo conectar. ¿Está el servidor encendido?")
+    except KeyboardInterrupt:
+        print("\n[APAGANDO] Sensor desconectado.")
+    finally:
+        cliente.close()
 
-            while True:
-                # 1. Generar la telemetría
-                datos = simular_datos(id_caballo, modo)
-                
-                # 2. Convertir el diccionario a JSON y luego a bytes
-                mensaje = json.dumps(datos) + "\n" #Convierte objeto python en string json. Porque...
-                
-                # 3. Enviar por el socket
-                s.sendall(mensaje.encode('utf-8')) #Convierte mensaje en bytes para el socket. SOCKET TCP envia y recibe Bytes. 
-                print(f"[{id_caballo}] Datos enviados: {datos['bpm']} lpm, {datos['temperatura']}°C, {datos['actividad']}")
-                
-                # 4. Esperar hasta el próximo envío
-                time.sleep(intervalo)
-
-        except ConnectionRefusedError:
-            print(f"[{id_caballo}] Error: El servidor no está corriendo o rechazó la conexión.")
-        except KeyboardInterrupt:
-            print(f"\n[{id_caballo}] Sensor apagado manualmente.")
-        except Exception as e:
-            print(f"[{id_caballo}] Error inesperado: {e}")
-
-if __name__ == "__main__":
-    # Parseo de argumentos por línea de comandos (Requisito de la cátedra)
-    parser = argparse.ArgumentParser(description="Simulador de Sensor Equino - HorseWatch")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="IP del servidor Gateway")
-    parser.add_argument("--port", type=int, default=8888, help="Puerto del servidor Gateway")
-    parser.add_argument("--id", type=str, required=True, help="Identificador del caballo (ej. box_01)")
-    parser.add_argument("--modo", type=str, choices=["sano", "colico"], default="sano", help="Estado de salud a simular")
-    parser.add_argument("--intervalo", type=float, default=2.0, help="Segundos entre cada envío de datos")
-
+if __name__ == '__main__':
+    # Configuración de los argumentos de la terminal
+    parser = argparse.ArgumentParser(description="Simulador de Sensores HorseWatch")
+    parser.add_argument("--id", required=True, help="Nombre o ID del Box (ej. Box_Luna)")
+    parser.add_argument("--perfil", choices=["saludable", "colico"], required=True, help="Perfil de salud del caballo")
+    
     args = parser.parse_args()
-
-    iniciar_sensor(args.host, args.port, args.id, args.modo, args.intervalo)
+    
+    iniciar_sensor(args.id, args.perfil)
