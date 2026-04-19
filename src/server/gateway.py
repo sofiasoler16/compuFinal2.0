@@ -12,8 +12,8 @@ from server.worker import atender_sensor
 from db.horsedb import inicializar_db
 
 def iniciar_gateway():
-    # 1. Inicializar la Base de Datos por las dudas
-    inicializar_db()
+    # 1. Inicializar la Base de Datos 
+    inicializar_db() # Ve que este la BD iniciada
 
     # 2. Crear la Cola IPC para memoria compartida
     cola_ipc = multiprocessing.Queue()
@@ -23,19 +23,19 @@ def iniciar_gateway():
     proc_notificador.start()
     
     # 4. Configurar Socket IPv6 (Gateway)
-    # AF_INET6 es clave para soportar IPv6 nativo como pediste
-    server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    
+    server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM) # AF_INET6 es clave para soportar IPv6
     
     # Puerto de escucha y bind ("::" significa escuchar en todas las interfaces IPv6)
-    puerto = 8080
+    puerto = 8080 #Abre el puerto 8080
     server_socket.bind(('::', puerto))
     server_socket.listen(10) # Permite encolar hasta 10 sensores conectándose al mismo milisegundo
     print(f"\n[GATEWAY ACTIVO] Escuchando conexiones IPv6 en el puerto {puerto}...\n")
     
     try:
         while True:
-            # 5. Esperar bloqueado hasta que llegue un sensor
-            conexion, direccion = server_socket.accept()
+    # 5. Esperar bloqueado hasta que llegue un sensor
+            conexion, direccion = server_socket.accept() #Con accept se queda esperando a que lo llamen (Lo llama el Sensor)
             
             # 6. Crear un Hilo para este box específico y soltarlo a trabajar
             hilo_worker = threading.Thread(target=atender_sensor, args=(conexion, direccion, cola_ipc))

@@ -1,30 +1,38 @@
 import json
 import sys
 import os
+from collections import deque # <--- Importar la estructura con MEMORIA
 
-# Ajustamos el path para poder importar módulos de otras carpetas
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from db.horsedb import guardar_lectura
-from server.notifier_process import analizar_riesgo
+from server.diagnostics import analizar_riesgo_ventana 
 
 def atender_sensor(conexion, direccion, cola_ipc):
     print(f"[NUEVO BOX CONECTADO] Dirección IPv6: {direccion}")
+    
+    # CREAMOS LA MEMORIA DEL CABALLO (La ventana deslizante) DE CADA CABALLO (Cada Hilo tiene la suya)
+    # 180 lecturas = 3 minutos a 1 lectura por segundo
+    memoria_movimientos = deque(maxlen=180)
+    memoria_temperaturas = deque(maxlen=180)
+    
     try:
         while True:
-            # Recibimos hasta 1024 bytes (suficiente para un JSON de sensores)
             datos_crudos = conexion.recv(1024)
             if not datos_crudos:
-                break # El sensor se desconectó
+                break
             
-            # Convertimos el texto recibido a un diccionario de Python
             datos = json.loads(datos_crudos.decode('utf-8'))
             
-            # 1. Analizar riesgo de cólico
-            alertas = analizar_riesgo(datos['movimiento'], datos['temperatura'])
+            # 1. Agregamos el nuevo dato a la memoria (si está llena, el más viejo se borra)
+            memoria_movimientos.append(datos['movimiento'])
+            memoria_temperaturas.append(datos['temperatura'])
+            
+            # 2. Analizamos TODA la memoria junta (los últimos 3 minutos)
+            alertas = analizar_riesgo_ventana(list(memoria_movimientos), list(memoria_temperaturas))
             alertas_str = ", ".join(alertas) if alertas else "Ninguna"
             
-            # 2. Guardar en SQLite (usando función con Lock seguro)
+            # 3. Guardar el log individual en la BD siempre
             guardar_lectura(
                 datos['horse_id'], 
                 datos['bpm'], 
@@ -33,10 +41,10 @@ def atender_sensor(conexion, direccion, cola_ipc):
                 alertas_str
             )
             
-            # 3. Notificar vía IPC si hay alerta
+            # 4. Si la ventana entera dictaminó que hay peligro, avisamos al Notificador
             if alertas:
                 alerta_msg = {
-                    'mensaje': f"¡Signos de dolor abdominal en {datos['horse_id']}!",
+                    'mensaje': alertas_str, # Envia el texto del patrón encontrado
                     'data': datos
                 }
                 cola_ipc.put(alerta_msg)
