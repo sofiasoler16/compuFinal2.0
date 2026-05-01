@@ -65,8 +65,9 @@ def iniciar_sensor(horse_id, perfil, ip_version): #Enciendo el sensor
         # COMO VIAJAN LOS DATOS
         while True:
             datos = generar_datos(horse_id, perfil)
-            mensaje_json = json.dumps(datos) #Los empaqueta en JSON. Por que? 
-            cliente.send(mensaje_json.encode('utf-8')) #Lo manda a ...
+            mensaje_json = json.dumps(datos) #Los empaqueta en JSON (bloque de texto). 
+            cliente.send(mensaje_json.encode('utf-8')) #Lo codifica en utf-8 para que lo entienda sockets.
+            #Se van a los workers
             
             alerta_visual = "⚠️" if datos['temperatura'] >= 40.0 or datos['movimiento'] in ["revolcandose", "mirar la panza", "rascar piso"] else "✅"
             print(f"[{alerta_visual} ENVIADO] Temp: {datos['temperatura']}°C | Mov: {datos['movimiento']:<15} | BPM: {datos['bpm']}")

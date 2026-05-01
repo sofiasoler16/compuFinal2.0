@@ -22,15 +22,16 @@ def atender_sensor(conexion, direccion, cola_ipc):
             if not datos_crudos:
                 break
             
-            datos = json.loads(datos_crudos.decode('utf-8'))
+            datos = json.loads(datos_crudos.decode('utf-8')) #Lo de-codifica de utf-8 a texto otra vez
+            #Con json.loads lo convierte de json a diccionario python
             
             # 1. Agregamos el nuevo dato a la memoria (si está llena, el más viejo se borra)
             memoria_movimientos.append(datos['movimiento'])
             memoria_temperaturas.append(datos['temperatura'])
             
             # 2. Analizamos TODA la memoria junta (los últimos 3 minutos)
-            alertas = analizar_riesgo_ventana(list(memoria_movimientos), list(memoria_temperaturas))
-            alertas_str = ", ".join(alertas) if alertas else "Ninguna"
+            alertas = analizar_riesgo_ventana(list(memoria_movimientos), list(memoria_temperaturas)) #analizar_riesgo_ventana en diagnostic.py
+            alertas_str = ", ".join(alertas) if alertas else "Ninguna" 
             
             # 3. Guardar el log individual en la BD siempre
             guardar_lectura(
@@ -47,7 +48,7 @@ def atender_sensor(conexion, direccion, cola_ipc):
                     'mensaje': alertas_str, # Envia el texto del patrón encontrado
                     'data': datos
                 }
-                cola_ipc.put(alerta_msg)
+                cola_ipc.put(alerta_msg) #pone la alerta en la cola
                 
     except json.JSONDecodeError:
         print(f"[ERROR] Datos corruptos recibidos de {direccion}")

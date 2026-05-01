@@ -8,7 +8,8 @@ def analizar_riesgo_ventana(historial_movimientos, historial_temperaturas):
     
     if len(historial_movimientos) < 30:
         return alertas
-        
+    
+    # Cuenta cantidad de movimientos sospechosos
     revolcones = historial_movimientos.count("revolcandose")
     rascadas = historial_movimientos.count("rascar piso")
     guaneadas = historial_movimientos.count("guaneando")

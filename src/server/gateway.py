@@ -15,11 +15,12 @@ def iniciar_gateway():
     # 1. Inicializar la Base de Datos 
     inicializar_db() # Ve que este la BD iniciada
 
-    # 2. Crear la Cola IPC para memoria compartida
+    # 2. Crear la Cola IPC para memoria compartida. De quienes? POr que?
     cola_ipc = multiprocessing.Queue()
     
     # 3. Iniciar el proceso Notificador en un núcleo separado
-    proc_notificador = multiprocessing.Process(target=proceso_notificador, args=(cola_ipc,))
+    proc_notificador = multiprocessing.Process(target=proceso_notificador, args=(cola_ipc,)) #Crea el proceso notificador como multiprocessing no como HILO
+    # MUltiprocessing porque 
     proc_notificador.start()
     
     # 4. Configurar Socket IPv6 (Gateway)
@@ -38,7 +39,7 @@ def iniciar_gateway():
             conexion, direccion = server_socket.accept() #Con accept se queda esperando a que lo llamen (Lo llama el Sensor)
             
             # 6. Crear un Hilo para este box específico y soltarlo a trabajar
-            hilo_worker = threading.Thread(target=atender_sensor, args=(conexion, direccion, cola_ipc))
+            hilo_worker = threading.Thread(target=atender_sensor, args=(conexion, direccion, cola_ipc)) #Cada worker tiene su cola_ipc
             hilo_worker.start()
             
     except KeyboardInterrupt:
