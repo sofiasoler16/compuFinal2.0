@@ -20,7 +20,7 @@ def iniciar_gateway():
     
     # 3. Iniciar el proceso Notificador en un núcleo separado
     proc_notificador = multiprocessing.Process(target=proceso_notificador, args=(cola_ipc,)) #Crea el proceso notificador como multiprocessing no como HILO
-    # MUltiprocessing porque 
+    # MUltiprocessing para tener propia memoria y espacio, si notificador deja de funcionar los workers siguen funcionando
     proc_notificador.start()
     
     # 4. Configurar Socket IPv6 (Gateway)
