@@ -26,7 +26,7 @@ El proyecto está dividido en tres módulos físicos: Cliente, Servidor y Base d
 
 1. **Nacimiento**: `sensor.py` empaqueta la telemetría en JSON y llama al `.connect()` del servidor.
 2. **Recepción**: `gateway.py` detecta la llamada en su `.accept()`, "atiende" y lanza un `worker.py` para esa conexión.
-3. **Análisis**: El dato entra al Worker, que lo suma a su ventana de 3 minutos y le pregunta a `diagnostics.py`: *"¿Este historial representa un peligro?"*.
+3. **Análisis**: El dato entra al Worker y le pregunta a `diagnostics.py`: *"¿Este historial representa un peligro?"*.
 4. **Bifurcación Segura**: 
    * **Siempre**: El Worker le pide la llave (`Lock`) a `horsedb.py`, guarda la lectura en SQLite y devuelve la llave.
    * **En caso de peligro**: El Worker empuja la alerta a la Cola IPC.
@@ -55,3 +55,5 @@ En una tercera terminal, forzaremos un perfil clínico de riesgo para observar e
 ```bash
 python3 src/client/sensor.py --id Box_WhiteBoots --perfil colico --ipv ipv4
 ```
+
+TODAVIA NO IMPLEMENTO DOCKER!!
