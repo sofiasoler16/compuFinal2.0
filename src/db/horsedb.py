@@ -57,9 +57,9 @@ def guardar_lectura(horse_id, bpm, temperatura, actividad, alertas_generadas):
 if __name__ == "__main__":
     inicializar_db()
 
-    # 2. Simulamos que llegó un dato de un sensor y lo guardamos
-    guardar_lectura("Box_Luna", 45.0, 38.5, "Inquieta, escarbando", "Posible dolor abdominal")
-    guardar_lectura("Box_Coca", 38.0, 37.8, "Tranquila, comiendo", "Ninguna")
+    # # 2. Simulamos que llegó un dato de un sensor y lo guardamos
+    # guardar_lectura("Box_Luna", 45.0, 38.5, "Inquieta, escarbando", "Posible dolor abdominal")
+    # guardar_lectura("Box_Coca", 38.0, 37.8, "Tranquila, comiendo", "Ninguna")
 
 
 
