@@ -1,10 +1,18 @@
 import multiprocessing
 import time
+import smtplib
+from email.message import EmailMessage
+from queue import Empty
 
 # 300 segundos = 5 minutos de espera para el veterinario
 COOLDOWN_EMAIL = 300 
 # 10 segundos de espera para no saturar la pantalla con logs locales
 COOLDOWN_LOG = 10 
+
+# --- CONFIGURACIÓN DE CORREO ---
+EMAIL_ORIGEN = "sofiasoler16044@gmail.com"
+PASSWORD_APP = "awvq pyyv arfa fglk" 
+EMAIL_VETERINARIO = "sofi@sofiasoler.com.ar"
 
 def proceso_notificador(cola_ipc): 
     """Este es el proceso Notificador IPC. Vive esperando alertas."""
@@ -29,6 +37,7 @@ def proceso_notificador(cola_ipc):
             ultimos_logs[horse_id] = ahora # Reseteamos el reloj del log de pantalla
 
         # 2. CONTROL DEL EMAIL AL VETERINARIO
+        # AGREGAR envio de EMAIL REAL (Esperar OK)
         ultimo_email = ultimos_emails.get(horse_id, 0)
 
         # Si ya pasaron 5 minutos desde el último email print email ahora, despues enviar mail
@@ -39,7 +48,40 @@ def proceso_notificador(cola_ipc):
 
 def enviar_notificacion_externa(alerta):
     """
-    Aquí iría el código real de smtplib para el email.
+    Se conecta al servidor SMTP de Google y envía la alerta real.
     """
-    print(">>> [EMAIL ENVIADO AL VETERINARIO] <<<")
-    print(f"Asunto: Emergencia en {alerta['data']['horse_id']}")
+    # Extraemos los datos del diccionario (usamos .get por seguridad por si algún dato falta)
+    horse_id = alerta['data']['horse_id']
+    temperatura = alerta['data'].get('temperatura', 'N/A')
+    movimiento = alerta['data'].get('movimiento', 'N/A')
+    bpm = alerta['data'].get('bpm', 'N/A')
+    mensaje_motivo = alerta.get('mensaje', 'Se detectaron síntomas de cólico.')
+
+    print(f"\n>>> [EMAIL] Conectando con servidor para notificar emergencia en {horse_id}...")
+    
+    # Armamos el texto del mail
+    cuerpo = f"URGENTE: {mensaje_motivo}\n\n"
+    cuerpo += f"Datos Clínicos actuales del paciente:\n"
+    cuerpo += f"- Box: {horse_id}\n"
+    cuerpo += f"- Temperatura: {temperatura}°C\n"
+    cuerpo += f"- Movimiento: {movimiento}\n"
+    cuerpo += f"- Ritmo Cardíaco: {bpm} BPM\n\n"
+    cuerpo += "Por favor, acceda al monitor web para ver el gráfico clínico en tiempo real."
+
+    # Preparamos el sobre del mail
+    msg = EmailMessage()
+    msg.set_content(cuerpo)
+    msg['Subject'] = f'⚠️ EMERGENCIA HORSEWATCH: {horse_id}'
+    msg['From'] = EMAIL_ORIGEN
+    msg['To'] = EMAIL_VETERINARIO
+
+    try:
+        # Enviamos la carta
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls() 
+        server.login(EMAIL_ORIGEN, PASSWORD_APP)
+        server.send_message(msg)
+        server.quit()
+        print(f">>> [✅ EMAIL ENVIADO AL VETERINARIO EXITOSAMENTE] <<<")
+    except Exception as e:
+        print(f">>> [❌ ERROR FATAL EMAIL] No se pudo conectar con Google: {e} <<<")

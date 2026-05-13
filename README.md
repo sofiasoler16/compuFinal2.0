@@ -47,13 +47,13 @@ python3 src/server/gateway.py
 **Paso 2: Conectar un Sensor (Caballo Sano)**
 En una nueva terminal, iniciaremos el simulador para un caballo con un perfil saludable .
 ```bash
-python3 src/client/sensor.py --id Box_Condor --perfil saludable --ipv ipv6
+python3 src/client/sensor.py --id Box_Condor --perfil saludable 
 ```
 
 **Paso 3: Conectar un Sensor (Caballo con Cólico)**
 En una tercera terminal, forzaremos un perfil clínico de riesgo para observar el diagnóstico en tiempo real y el mecanismo anti-spam del notificador.
 ```bash
-python3 src/client/sensor.py --id Box_WhiteBoots --perfil colico --ipv ipv4
+python3 src/client/sensor.py --id Box_WhiteBoots --perfil colico 
 ```
 
-TODAVIA NO IMPLEMENTO DOCKER!!
+TODAVIA NO IMPLEMENTO DOCKER TODAVIA!! (Esperar OK para seguir)

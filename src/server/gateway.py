@@ -23,15 +23,33 @@ def iniciar_gateway():
     # Mutiprocessing para tener propia memoria y espacio, si notificador deja de funcionar los workers siguen funcionando
     proc_notificador.start()
     
-    # 4. Configurar Socket IPv6 (Gateway)
+# 4. Configurar Socket Inteligente (Gateway)
+    puerto = 8080 
     
-    server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM) # AF_INET6 es clave para soportar IPv6
+    # AI_PASSIVE y 'None' significan: "Buscame en mi propia máquina dónde puedo escuchar"
+    opciones = socket.getaddrinfo(None, puerto, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
+    server_socket = None
     
-    # Puerto de escucha y bind ("::" significa escuchar en todas las interfaces IPv6)
-    puerto = 8080 #Abre el puerto 8080
-    server_socket.bind(('::', puerto))
-    server_socket.listen(10) # Permite encolar hasta 10 sensores conectándose al mismo milisegundo
-    print(f"\n[GATEWAY ACTIVO] Escuchando conexiones IPv6 en el puerto {puerto}...\n")
+    for familia, tipo, protocolo, canonname, direccion in opciones:
+        try:
+            server_socket = socket.socket(familia, tipo, protocolo)
+            # Esto evita que el puerto quede "trabado" si cerrás y abrís el programa rápido
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(direccion)
+            server_socket.listen(10) 
+            
+            print(f"\n[GATEWAY ACTIVO] Escuchando de forma independiente del protocolo en: {direccion}\n")
+            break # Si logró abrir el puerto, sale del ciclo
+            
+        except OSError:
+            if server_socket:
+                server_socket.close()
+            server_socket = None
+            continue
+            
+    if server_socket is None:
+        print("\n[ERROR FATAL] El Gateway no pudo abrir el puerto en ninguna interfaz de red.")
+        sys.exit(1)
     
     try:
         while True:
