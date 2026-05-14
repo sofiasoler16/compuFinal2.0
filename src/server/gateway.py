@@ -30,13 +30,12 @@ def iniciar_gateway():
     opciones = socket.getaddrinfo(None, puerto, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
     server_socket = None
     
-    for familia, tipo, protocolo, canonname, direccion in opciones:
+    for familia, tipo, protocolo, canonname, direccion in opciones: #Recorre la tupla 
         try:
-            server_socket = socket.socket(familia, tipo, protocolo)
-            # Esto evita que el puerto quede "trabado" si cerrás y abrís el programa rápido
-            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_socket.bind(direccion)
-            server_socket.listen(10) 
+            server_socket = socket.socket(familia, tipo, protocolo) #Crea el objeto en Mem. 
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #Permite volver a usar el puerto
+            server_socket.bind(direccion) #Usa el socket en Mem. y lo "ata" a la tarjeta de red y al puerto
+            server_socket.listen(10) #Empezar a escuchar
             
             print(f"\n[GATEWAY ACTIVO] Escuchando de forma independiente del protocolo en: {direccion}\n")
             break # Si logró abrir el puerto, sale del ciclo
@@ -56,7 +55,7 @@ def iniciar_gateway():
     # 5. Esperar bloqueado hasta que llegue un sensor
             conexion, direccion = server_socket.accept() #Con accept se queda esperando a que lo llamen (Lo llama el Sensor)
             
-            # 6. Crear un Hilo para este box específico y soltarlo a trabajar
+            # 6. Crear un Hilo para este box específico 
             hilo_worker = threading.Thread(target=atender_sensor, args=(conexion, direccion, cola_ipc)) #Cada worker tiene su cola_ipc
             hilo_worker.start()
             

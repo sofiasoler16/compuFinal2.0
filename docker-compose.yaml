@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: .
+    container_name: horsewatch_gateway
+    # Ejecuta tu Gateway
+    command: python3 src/server/gateway.py
+    # Abrimos el puerto 8080 para que los sensores se puedan conectar desde afuera
+    ports:
+      - "8080:8080"
+    # ESTA ES LA MAGIA: Montamos tu carpeta actual adentro del contenedor en /app
+    volumes:
+      - .:/app
+    # Evita problemas con el buffer de los prints en la terminal
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  webserver:
+    build: .
+    container_name: horsewatch_web
+    # Ejecuta tu Servidor Web
+    command: python3 src/web/webserver.py
+    # Abrimos el puerto 8000 para que entres desde tu navegador web
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Le decimos que espere a que el gateway arranque primero (para que cree la BD)
+    depends_on:
+      - gateway

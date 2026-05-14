@@ -60,7 +60,7 @@ class HorseWatchWebHandler(http.server.BaseHTTPRequestHandler):
         try:
             conexion = sqlite3.connect(DB_PATH)
             cursor = conexion.cursor()
-            cursor.execute("SELECT DISTINCT horse_id FROM lecturas")
+            cursor.execute("SELECT DISTINCT horse_id FROM lecturas WHERE timestamp >= datetime('now', '-30 seconds')")
             caballos = [fila[0] for fila in cursor.fetchall()]
             conexion.close()
         except sqlite3.OperationalError:

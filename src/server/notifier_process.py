@@ -75,13 +75,19 @@ def enviar_notificacion_externa(alerta):
     msg['From'] = EMAIL_ORIGEN
     msg['To'] = EMAIL_VETERINARIO
 
-    try:
-        # Enviamos la carta
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls() 
-        server.login(EMAIL_ORIGEN, PASSWORD_APP)
-        server.send_message(msg)
-        server.quit()
-        print(f">>> [✅ EMAIL ENVIADO AL VETERINARIO EXITOSAMENTE] <<<")
-    except Exception as e:
-        print(f">>> [❌ ERROR FATAL EMAIL] No se pudo conectar con Google: {e} <<<")
+    max_reintentos = 3
+    for intento in range(max_reintentos):
+        try:
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls() 
+            server.login(EMAIL_ORIGEN, PASSWORD_APP)
+            server.send_message(msg)
+            server.quit()
+            print(f">>> [✅ EMAIL ENVIADO EXITOSAMENTE] <<<")
+            break # Si funcionó, rompemos el bucle y terminamos
+            
+        except Exception as e:
+            print(f"[❌ INTENTO {intento + 1} FALLÓ] Sin internet: {e}")
+            if intento < max_reintentos - 1:
+                print("Esperando 10 segundos antes de reintentar...")
+                time.sleep(10) # Espera un ratito a ver si vuelve el Wi-Fi

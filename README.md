@@ -55,5 +55,8 @@ En una tercera terminal, forzaremos un perfil clínico de riesgo para observar e
 ```bash
 python3 src/client/sensor.py --id Box_WhiteBoots --perfil colico 
 ```
-
+**Paso 4: Si queremos ver el servidor web**
+```bash
+python3 src/web/webserver.py
+```
 TODAVIA NO IMPLEMENTO DOCKER TODAVIA!! (Esperar OK para seguir)
